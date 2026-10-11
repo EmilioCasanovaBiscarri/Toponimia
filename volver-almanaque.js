@@ -323,7 +323,7 @@
     caja.className = 'almanaque-sello-caja';
     var sello = document.createElement('a');
     sello.className = 'almanaque-sello';
-    sello.setAttribute('aria-label', 'Almanaque completo: todas las hojas de hoy hechas. Volver a la portada');
+    sello.setAttribute('aria-label', 'Almanaque completo: todos los juegos de hoy completados. Volver a la portada');
     sello.addEventListener('click', function () { sello.href = destino(); });
     sello.appendChild(trozo('almanaque-sello__titulo', 'Almanaque completo'));
     sello.appendChild(trozo('almanaque-sello__fecha', ''));
@@ -368,7 +368,7 @@
 
     var texto = document.createElement('p');
     texto.className = 'almanaque-completo__texto';
-    texto.textContent = 'Has hecho las ' + juegos.length + ' hojas de hoy. Toca el sello para volver a la portada.';
+    texto.textContent = 'Has completado los ' + juegos.length + ' juegos de hoy. Toca el sello para volver a la portada.';
     hoja.appendChild(texto);
 
     var cerrar = document.createElement('button');
