@@ -24,11 +24,9 @@
    «Siguiente juego: Periplo ☞» con las mismas clases, así que toma el estilo del juego.
    Almanaque completo: con todas las hojas de hoy hechas (también la de este juego), la
    franja dice en su lugar «✓ Almanaque completo» y lleva a la portada, donde espera el
-   sello del día; en la pantalla final no sale botón de siguiente, sino el mismo sello
-   «Almanaque completo» de la portada, debajo de cada botón de volver (sin botón, al final
-   de la página), que también lleva a la portada. En el juego que acaba el almanaque, al
-   llamar a almanaqueHecho, se abre por encima de todo (también de la pantalla final del
-   juego, aunque se abra después) una pantalla de almanaque completo: el sello se estampa
+   sello del día; en la pantalla final no sale botón de siguiente, solo el de volver. En el
+   juego que acaba el almanaque, al llamar a almanaqueHecho, se abre por encima de todo
+   (también de la pantalla final del juego, aunque se abra después) una pantalla de almanaque completo: el sello se estampa
    en ella, cae confeti con los colores de los juegos y «Ver la partida» la cierra (una
    vez al día, apuntado en almanaque:confeti; con movimiento reducido, sin confeti y con
    el sello quieto).
@@ -298,7 +296,6 @@
       }
     }
     var hecho = hechoHoy();
-    pintarSello(completo && hecho);
     // El almanaque se ha completado con la partida de esta página: se celebra.
     if (completo && terminadoAqui) celebrar();
     var botones = document.querySelectorAll('[data-almanaque-siguiente]');
@@ -315,41 +312,6 @@
   }
 
   /* Sello de almanaque completo */
-
-  var selloSuelto = null; // al final de la página, para los juegos sin botón de volver
-
-  // El sello de la portada, debajo de cada botón de volver de la pantalla final (o al final
-  // de la página si el juego no tiene ninguno). Se crean una vez y solo se mueven si hace
-  // falta: cada inserción despierta al vigilante de la página.
-  function pintarSello(mostrarlo) {
-    var volver = document.querySelectorAll('[data-almanaque-volver]');
-    var cajas = [];
-    for (var i = 0; i < volver.length; i++) {
-      if (mostrarlo && !volver[i].almanaqueSello) volver[i].almanaqueSello = crearSello();
-      var caja = volver[i].almanaqueSello;
-      if (!caja) continue;
-      if (volver[i].nextSibling !== caja) volver[i].parentNode.insertBefore(caja, volver[i].nextSibling);
-      cajas.push(caja);
-    }
-    if (mostrarlo && !volver.length) {
-      if (!selloSuelto) selloSuelto = crearSello();
-      if (selloSuelto.parentNode !== document.body || selloSuelto.nextSibling) document.body.appendChild(selloSuelto);
-    }
-    if (selloSuelto) {
-      // En cuanto el juego pone su botón de volver, el sello suelto sobra.
-      if (volver.length && selloSuelto.parentNode) selloSuelto.parentNode.removeChild(selloSuelto);
-      else cajas.push(selloSuelto);
-    }
-    var fecha = fechaDeHoy();
-    for (var c = 0; c < cajas.length; c++) {
-      cajas[c].hidden = !mostrarlo;
-      if (!mostrarlo) continue;
-      var sello = cajas[c].firstChild;
-      sello.href = destino();
-      var linea = sello.querySelector('.almanaque-sello__fecha');
-      if (linea.textContent !== fecha) linea.textContent = fecha;
-    }
-  }
 
   function fechaDeHoy() {
     var hoy = new Date();
@@ -633,7 +595,6 @@
       // Sello de almanaque completo: el de la portada, con el rojo de tinta del logo.
       // Al caer, el sello es más ancho que un móvil: lo que sobra no debe dar scroll lateral.
       '.almanaque-sello-caja{display:flex;justify-content:center;width:100%;margin:1.4rem 0 1rem;overflow-x:clip}' +
-      '.almanaque-sello-caja[hidden]{display:none}' +
       '.almanaque-sello{display:inline-flex;flex-direction:column;align-items:center;gap:.15rem;' +
       'padding:.45rem 1.1rem .5rem;border:5px double #a33a2a;border-radius:3px;color:#a33a2a;' +
       'font:inherit;line-height:1.1;text-decoration:none;transform:rotate(-4deg);opacity:.92;' +
