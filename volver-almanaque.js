@@ -14,7 +14,7 @@
    llega aunque el jugador no vuelva con la mano ☜. También se apunta el día jugado, para
    la racha común que muestra la portada.
    Botón de volver junto a «Compartir resultado»: el juego pone en su pantalla final
-     <a data-almanaque-volver hidden href="https://joseleking.github.io/Almanaque/">…</a>
+     <a data-almanaque-volver hidden href="https://emiliocasanovabiscarri.github.io/Almanaque/">…</a>
    con el estilo que quiera. Este script lo muestra y le da el mismo destino que la
    mano ☜. Puede pintarse en cualquier momento: el script vigila la página.
    Siguiente juego: la franja ofrece siempre a la derecha «Periplo ☞», que lleva
@@ -41,7 +41,7 @@
 (function () {
   'use strict';
 
-  var WEB = 'https://joseleking.github.io/';
+  var WEB = 'https://emiliocasanovabiscarri.github.io/';
   // En local (todos los repos servidos desde el mismo puerto), los enlaces se quedan en local.
   var BASE = /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname) ? window.location.origin + '/' : WEB;
   var ALMANAQUE = BASE + 'Almanaque/';

@@ -453,7 +453,7 @@ function resultado(numero, rondas, respuestas) {
     </section>`}
 
     <button id="compartir" class="boton" type="button">Compartir</button>
-    <a class="boton boton-secundario" data-almanaque-volver hidden href="https://joseleking.github.io/Almanaque/">☜ Regresar al Almanaque</a>
+    <a class="boton boton-secundario" data-almanaque-volver hidden href="https://emiliocasanovabiscarri.github.io/Almanaque/">☜ Regresar al Almanaque</a>
     ${diaPrueba ? '' : `<p class="siguiente">Nuevos lugares en <time id="cuenta">${cuentaAtras()}</time></p>`}
   `;
 }
@@ -540,7 +540,7 @@ function responder(numero, indice, valor) {
 // Una marca por lugar: ▰ acertado, ▱ fallado. «Toponimia nº 7 ▰▱▰ 2/3 aciertos» y el enlace.
 function textoCompartir(numero, aciertos) {
   const marcas = aciertos.map((a) => (a ? '▰' : '▱')).join('');
-  return `Toponimia nº ${numero} ${marcas} ${aciertos.filter(Boolean).length}/${aciertos.length} aciertos\njoseleking.github.io/Toponimia`;
+  return `Toponimia nº ${numero} ${marcas} ${aciertos.filter(Boolean).length}/${aciertos.length} aciertos\nemiliocasanovabiscarri.github.io/Toponimia`;
 }
 
 async function compartir(numero, aciertos) {
