@@ -435,3 +435,13 @@ dialog h3 { margin: 1.4rem 0 0.5rem; font: 400 1.3rem/1 var(--titular); }
 @media (max-width: 360px) {
   .cifras { grid-template-columns: repeat(3, 1fr); row-gap: 0.75rem; }
 }
+
+/* Las cifras de IM Fell son de estilo antiguo (el 1 parece una I): los números de la ficha
+   final y de las estadísticas van en EB Garamond, con cifras modernas. */
+.ficha-final h2,
+.estadisticas strong {
+  font-family: var(--texto);
+  font-weight: 500;
+  font-variant-numeric: lining-nums;
+}
+.ficha-final h2 small { font-family: var(--titular); font-weight: 400; }
