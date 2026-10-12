@@ -43,3 +43,7 @@ Después sube `VERSION` en `sw.js` para que los jugadores reciban los cambios si
 - **Empezar de cero:** `http://localhost:8000/reiniciar/` borra la partida, el historial y la
   racha de ese navegador (clave `toponimia:v1` del `localStorage`), y las instrucciones vuelven
   a salir la primera vez.
+
+## Derechos de autor
+
+© 2026 Emilio Casanova Biscarri. Todos los derechos reservados. El código, los textos y los diseños de este repositorio no pueden copiarse ni reutilizarse sin permiso.
