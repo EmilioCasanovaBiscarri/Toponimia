@@ -30,6 +30,9 @@
    en ella, cae confeti con los colores de los juegos y «Ver la partida» la cierra (una
    vez al día, apuntado en almanaque:confeti; con movimiento reducido, sin confeti y con
    el sello quieto).
+   Derechos de autor: al final de la página, un pie con «© <año de hoy> Emilio Casanova
+   Biscarri · correo», como en la portada. El correo se monta a trozos para que no aparezca
+   entero en los archivos.
    Id del juego: Almanaque abre cada juego con ?desde=almanaque&juego=<id> y el id se
    recuerda en la pestaña para la ruta de ese juego; si no, sale de la ruta (/Periplo/ → periplo).
    Copia de referencia: se guarda en el repo de Almanaque, en para-los-juegos/.
@@ -638,6 +641,10 @@
       '.almanaque-completo--quieta,.almanaque-completo--quieta *{animation:none!important}' +
       '@keyframes almanaque-completo-entrar{from{opacity:0}to{opacity:1}}' +
       '@keyframes almanaque-completo-hoja{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}' +
+      '#almanaque-derechos{box-sizing:border-box;width:100%;margin:0;' +
+      'padding:1.5rem max(1rem,env(safe-area-inset-right)) max(1rem,env(safe-area-inset-bottom)) max(1rem,env(safe-area-inset-left));' +
+      'font:inherit;font-size:.8rem;line-height:1.4;text-align:center;color:inherit;opacity:.7}' +
+      '#almanaque-derechos a{color:inherit;text-underline-offset:.15em;white-space:nowrap}' +
       '@media (prefers-reduced-motion:reduce){#almanaque-franja .almanaque-volver__mano{transition:none}' +
       '.almanaque-sello--estampar,#almanaque-completo[open],.almanaque-completo__hoja{animation:none}}';
     document.head.appendChild(estilo);
@@ -681,6 +688,21 @@
     franja.appendChild(enlace);
     franja.appendChild(siguiente);
     document.body.insertBefore(franja, document.body.firstChild);
+    pintarDerechos();
+  }
+
+  function pintarDerechos() {
+    var usuario = 'ecasanovabisc';
+    var dominio = ['gmail', 'com'].join('.');
+    var correo = usuario + '@' + dominio;
+    var pie = document.createElement('footer');
+    pie.id = 'almanaque-derechos';
+    pie.textContent = '© ' + new Date().getFullYear() + ' Emilio Casanova Biscarri · ';
+    var enlace = document.createElement('a');
+    enlace.href = 'mailto:' + correo;
+    enlace.textContent = correo;
+    pie.appendChild(enlace);
+    document.body.appendChild(pie);
   }
 
   function trozo(clase, contenido) {
