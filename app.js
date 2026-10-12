@@ -237,7 +237,7 @@ function render() {
 
   app.innerHTML = `
     ${diaPrueba ? avisoPrueba(numero) : ''}
-    ${progreso(rondas, respuestas)}
+    ${vista < RONDAS ? progreso(rondas, respuestas) : ''}
     ${vista < RONDAS ? ronda(numero, vista, rondas[vista], respuestas[vista]) : resultado(numero, rondas, respuestas)}
   `;
   animarFicha = false;
@@ -411,6 +411,9 @@ function montarMapa(contenedor, r) {
 
 /* ---------- Resultado ---------- */
 
+// Punta de la rosa de los vientos del logo: marca de la ficha final.
+const ESTRELLA = 'M12 1.5 14.6 9.4 22.5 12 14.6 14.6 12 22.5 9.4 14.6 1.5 12 9.4 9.4Z';
+
 function resultado(numero, rondas, respuestas) {
   const aciertos = aciertosDe(rondas, respuestas);
   const total = aciertos.filter(Boolean).length;
@@ -426,16 +429,28 @@ function resultado(numero, rondas, respuestas) {
         </li>`,
     )
     .join('');
+  // Una estrella de la rosa de los vientos por ronda: llena si se acertó, hueca si no.
+  const estrellas = aciertos
+    .map((a) => `<svg class="${a ? 'bien' : 'mal'}" viewBox="0 0 24 24" aria-hidden="true"><path d="${ESTRELLA}"/></svg>`)
+    .join('');
+  const porcentaje = e.jugadas ? Math.round((e.aciertos / (e.jugadas * RONDAS)) * 100) : 0;
 
   return `
-    <section class="resultado">
-      <p class="ronda-numero">Toponimia nº ${numero}</p>
-      <p class="cuadros" aria-hidden="true">${aciertos.map((a) => `<span class="${a ? 'bien' : 'mal'}"></span>`).join('')}</p>
-      <h2>${total} de ${RONDAS}</h2>
-      <p class="frase">${frases[total]}</p>
-      ${diaPrueba ? '' : `<p class="racha-hoy">Racha: <strong>${rachaVigente(e, numero)}</strong> ${rachaVigente(e, numero) === 1 ? 'día' : 'días'}</p>`}
+    <section class="resultado" aria-label="Resultado de hoy">
+      <div class="ficha-final">
+        <p class="marcas" role="img" aria-label="${total} ${total === 1 ? 'acierto' : 'aciertos'} de ${RONDAS}">${estrellas}</p>
+        <h2>${total} <small>de ${RONDAS}</small></h2>
+        <p class="frase">${frases[total]}</p>
+      </div>
       <ol class="lista-resultado">${lista}</ol>
     </section>
+
+    ${diaPrueba ? '' : `<section class="estadisticas" aria-label="Estadísticas">
+      <div><strong>${e.jugadas}</strong><span>días</span></div>
+      <div><strong>${porcentaje}%</strong><span>aciertos</span></div>
+      <div><strong>${rachaVigente(e, numero)}</strong><span>racha</span></div>
+      <div><strong>${e.rachaMax}</strong><span>mejor racha</span></div>
+    </section>`}
 
     <button id="compartir" class="boton" type="button">Compartir</button>
     <a class="boton boton-secundario" data-almanaque-volver hidden href="https://joseleking.github.io/Almanaque/">☜ Regresar al Almanaque</a>

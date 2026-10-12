@@ -266,32 +266,61 @@ button { font: inherit; color: inherit; }
 
 /* ---------- Resultado ---------- */
 
-.resultado { text-align: center; padding-top: 1.5rem; animation: aparecer 0.45s ease-out; }
-.cuadros { display: flex; justify-content: center; gap: 0.4rem; margin: 0; }
-.cuadros span { width: 2rem; height: 2rem; border-radius: 6px; animation: aparecer 0.4s ease-out both; }
-.cuadros span:nth-child(2) { animation-delay: 0.12s; }
-.cuadros span:nth-child(3) { animation-delay: 0.24s; }
-.cuadros .bien { background: var(--verde); }
-.cuadros .mal { background: var(--rojo); }
-.resultado h2 { margin: 0.8rem 0 0; font: 400 3rem/1 var(--titular); }
-.frase { margin: 0.4rem 0 0; font-style: italic; color: var(--gris); }
-.racha-hoy { margin: 0.6rem 0 0; }
+/* Pantalla final, igual en todos los juegos del Almanaque: ficha con el resultado, una línea
+   por ronda, estadísticas y botones. Todo cabe en el móvil sin desplazarse hasta los botones. */
+.resultado { padding-top: 0.75rem; animation: aparecer 0.45s ease-out; }
 
-.lista-resultado {
-  margin: 1.5rem 0 0; padding: 0; list-style: none;
-  text-align: left;
-  background: var(--superficie); border-radius: var(--radio); box-shadow: var(--sombra);
+.ficha-final {
+  padding: 0.6rem 1rem 0.75rem;
+  border: 1px solid var(--linea);
+  outline: 1px solid var(--linea);
+  outline-offset: -5px;
+  border-radius: 2px;
+  background: var(--superficie);
+  text-align: center;
 }
+.marcas { display: flex; justify-content: center; gap: 0.6rem; margin: 0.15rem 0 0; }
+.marcas svg { width: 24px; height: 24px; }
+.marcas .bien { fill: var(--rojo); }
+.marcas .mal { fill: none; stroke: var(--gris); stroke-width: 1.2; stroke-linejoin: round; }
+.ficha-final h2 { margin: 0.1rem 0 0; font: 400 2.4rem/1.05 var(--titular); }
+.ficha-final h2 small { font-size: 0.55em; color: var(--gris); }
+.frase { margin: 0.15rem 0 0; font-style: italic; font-size: 1.1rem; color: var(--gris); }
+
+.lista-resultado { margin: 0.5rem 0 0; padding: 0; list-style: none; }
 .lista-resultado li {
-  display: grid; grid-template-columns: 1.6rem 1fr; column-gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  display: grid; grid-template-columns: 24px auto 1fr; align-items: baseline; column-gap: 8px;
+  min-height: 42px; padding: 7px 0;
+  border-bottom: 1px solid var(--linea);
 }
-.lista-resultado li + li { border-top: 1px solid var(--linea); }
-.marca { grid-row: span 2; font-weight: 600; font-size: 1.2rem; }
+.marca { font-weight: 600; text-align: center; }
 .marca.bien { color: var(--verde); }
 .marca.mal { color: var(--rojo); }
-.lista-lugar { font: 400 1.35rem/1.2 var(--titular); }
-.lista-significado { color: var(--gris); font-size: 1rem; }
+.lista-lugar { font: 400 1.25rem/1.2 var(--titular); }
+.lista-significado { color: var(--gris); text-align: right; line-height: 1.2; }
+
+.estadisticas {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  margin: 0.75rem 0 0; padding: 0.4rem 0;
+  border-top: 3px double var(--linea); border-bottom: 3px double var(--linea);
+  text-align: center;
+}
+.estadisticas strong { display: block; font: 400 1.35rem/1.1 var(--titular); }
+.estadisticas span { font-size: 0.8rem; color: var(--gris); }
+
+.resultado ~ .boton { margin-top: 0.75rem; padding: 0.7rem 1rem; min-height: 48px; }
+.resultado ~ .boton-secundario { margin-top: 0.5rem; }
+
+/* En pantallas bajas (iPhone SE, Android pequeños) las estadísticas bajan bajo los botones,
+   para que Compartir, Siguiente juego y Regresar se vean sin desplazarse. */
+@media (max-height: 660px) {
+  #app:has(> .resultado) { display: flex; flex-direction: column; }
+  #app:has(> .resultado) > .estadisticas,
+  #app:has(> .resultado) > .siguiente { order: 1; }
+  .resultado { padding-top: 0.5rem; }
+  .ficha-final { padding: 0.4rem 1rem 0.55rem; }
+  .lista-resultado li { min-height: 40px; padding: 6px 0; }
+}
 
 .siguiente { margin: 1.25rem 0 0; text-align: center; color: var(--gris); }
 .siguiente time { font-variant-numeric: tabular-nums; color: var(--tinta); }
