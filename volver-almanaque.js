@@ -12,7 +12,8 @@
      window.almanaqueHecho({ texto: 'Resuelto' });               // texto libre y corto
    Se guarda en localStorage (todos los juegos comparten origen con Almanaque), así que
    llega aunque el jugador no vuelva con la mano ☜. También se apunta el día jugado, para
-   la racha común que muestra la portada.
+   la racha común que muestra la portada, y un resumen del día en almanaque:historial
+   (juegos hechos, juegos que había y aciertos) para su calendario.
    Botón de volver junto a «Compartir resultado»: el juego pone en su pantalla final
      <a data-almanaque-volver hidden href="https://emiliocasanovabiscarri.github.io/Almanaque/">…</a>
    con el estilo que quiera. Este script lo muestra y le da el mismo destino que la
@@ -50,6 +51,8 @@
   var CLAVE_RESULTADOS = 'almanaque:resultados';
   var CLAVE_DIAS = 'almanaque:dias';
   var CLAVE_CONFETI = 'almanaque:confeti';
+  var CLAVE_HISTORIAL = 'almanaque:historial';
+  var LIMITE_HISTORIAL = 400; // días
   var juego = null;
   var terminadoAqui = false; // el juego ha llamado a almanaqueHecho en esta página
 
@@ -189,12 +192,66 @@
     } catch (e) { /* sin almacenamiento */ }
   }
 
+  // Resumen del día para el calendario de la portada: { hechos, total, aciertos, posibles }.
+  // Hechos, con la regla de la portada: hoja hecha o con resultado de hoy. «total» (los
+  // juegos que había) solo se sabe con games.json; si aún no ha llegado, lo pone después
+  // o lo completa la portada. De cada cifra se guarda la mayor vista: un día nunca pierde
+  // lo apuntado. La misma cuenta está en historial.js, en el repositorio de Almanaque.
+  function apuntarHistorial() {
+    try {
+      var resultados = {};
+      try {
+        var r = JSON.parse(window.localStorage.getItem(CLAVE_RESULTADOS) || 'null');
+        if (r && r.fecha === claveDeHoy() && r.juegos && typeof r.juegos === 'object') resultados = r.juegos;
+      } catch (e) { /* corrupto */ }
+      var ids = hechosHoy().concat(Object.keys(resultados)).filter(function (id, i, lista) {
+        return typeof id === 'string' && lista.indexOf(id) === i;
+      });
+      var nuevo = {};
+      if (juegos) {
+        var jugables = [];
+        for (var j = 0; j < juegos.length; j++) jugables.push(juegos[j].id);
+        ids = ids.filter(function (id) { return jugables.indexOf(id) !== -1; });
+        nuevo.total = jugables.length;
+      }
+      nuevo.hechos = ids.length;
+      nuevo.aciertos = 0;
+      nuevo.posibles = 0;
+      for (var i = 0; i < ids.length; i++) {
+        var res = resultados[ids[i]];
+        if (res && typeof res.aciertos === 'number' && typeof res.total === 'number' && res.total > 0) {
+          nuevo.aciertos += Math.min(Math.max(0, res.aciertos), res.total);
+          nuevo.posibles += res.total;
+        }
+      }
+      if (!nuevo.hechos) return;
+
+      var historial = null;
+      try { historial = JSON.parse(window.localStorage.getItem(CLAVE_HISTORIAL) || 'null'); } catch (e) { /* corrupto */ }
+      if (!historial || typeof historial !== 'object' || Array.isArray(historial)) historial = {};
+      var viejo = historial[claveDeHoy()];
+      var dia = {};
+      var campos = ['hechos', 'total', 'aciertos', 'posibles'];
+      for (var c = 0; c < campos.length; c++) {
+        var a = viejo && typeof viejo === 'object' ? numero(viejo[campos[c]]) : null;
+        var b = numero(nuevo[campos[c]]);
+        var valor = a === null ? b : b === null ? a : Math.max(a, b);
+        if (valor !== null) dia[campos[c]] = valor;
+      }
+      historial[claveDeHoy()] = dia;
+      var fechas = Object.keys(historial).sort();
+      for (var f = 0; f < fechas.length - LIMITE_HISTORIAL; f++) delete historial[fechas[f]];
+      window.localStorage.setItem(CLAVE_HISTORIAL, JSON.stringify(historial));
+    } catch (e) { /* sin almacenamiento */ }
+  }
+
   // El juego avisa de que la partida de hoy está terminada (y, si quiere, de cómo ha ido).
   window.almanaqueHecho = function (resultado) {
     terminadoAqui = true;
     guardarResultado(resultado);
     apuntarHecho();
     apuntarDia();
+    apuntarHistorial();
     actualizarEnlace();
   };
 
@@ -239,6 +296,8 @@
           var estado = String(j && j.estado || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           return j && j.id && j.nombre && j.url && estado !== 'proximamente';
         });
+        // Con la lista ya se sabe cuántos juegos hay hoy: el día queda completo o no.
+        if (terminadoAqui) apuntarHistorial();
         actualizarSiguiente();
       })
       .catch(function () { /* sin conexión: no se ofrece */ });
