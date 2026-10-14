@@ -38,6 +38,10 @@ const LENGUAS = {
   'catalán': '#8C5A2E',
   'celta': '#56704F',
   'germánico': '#6A6A5A',
+  'iroqués': '#6E5A3E',
+  'ojibwe': '#3F6470',
+  'aleutiano': '#5A6B86',
+  'neerlandés': '#B06A2E',
 };
 const LENGUA_POR_DEFECTO = '#8A7B6B';
 
