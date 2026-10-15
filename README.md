@@ -43,8 +43,9 @@ Añade objetos al final de `data/dias.json`, con `dia` correlativo y tres rondas
   del día, y que no repitan el significado de ninguno de ellos.
 - Ronda inversa: añade `"tipo": "inversa"` y `"pregunta": "¿Qué lugar significa «…»?"`; entonces
   `correcta` y `opciones` son topónimos. En el tablero, la tarjeta del lugar lleva `correcta` y
-  su significado sale de entre las comillas de la pregunta; esa ronda no aporta señuelo, así que
-  ese día hay cinco significados.
+  su significado sale de entre las comillas de la pregunta. Como sus opciones son lugares, su
+  señuelo va en `"senuelo": "…"` (un significado falso pero creíble para ese lugar, que no
+  repita los de los otros dos lugares del día); sin él, ese día salen cinco significados.
 - En `nota`, `*texto*` se muestra en cursiva.
 - `zoom` (opcional) ajusta el mini-mapa; si no, se usa 5, o 3 para regiones amplias.
 - Lenguas nuevas: añade su color en `LENGUAS`, al principio de `app.js`.

@@ -169,14 +169,17 @@ const nombreDe = (r) => (esInversa(r) ? r.correcta : r.lugar);
 
 /**
  * Los significados del tablero, barajados igual para todos: el de cada lugar y un señuelo de cada
- * uno, elegido entre sus opciones falsas. Las rondas inversas no tienen significados falsos (sus
- * opciones son lugares): esos días salen cinco.
+ * uno, elegido entre sus opciones falsas. Las opciones de las rondas inversas son lugares: su
+ * señuelo va aparte, en `senuelo`.
  */
 function significadosDe(numero, rondas) {
   const lista = [];
   rondas.forEach((r, i) => {
     lista.push(significado(r));
-    if (esInversa(r)) return;
+    if (esInversa(r)) {
+      if (r.senuelo) lista.push(r.senuelo);
+      return;
+    }
     const senuelos = r.opciones.filter((o) => o !== r.correcta);
     if (senuelos.length) lista.push(senuelos[Math.floor(aleatorio(numero * 7919 + i * 104729)() * senuelos.length)]);
   });
