@@ -99,75 +99,96 @@ button { font: inherit; color: inherit; }
   font: 400 1.25rem/1 var(--titular);
 }
 
-/* ---------- Progreso ---------- */
+/* ---------- Tablero: tres lugares y sus significados ---------- */
 
-.progreso {
-  display: flex; justify-content: center; gap: 0.6rem;
-  margin: 1.1rem 0 0; padding: 0; list-style: none;
-}
-.progreso li {
-  width: 0.75rem; height: 0.75rem; border-radius: 50%;
-  border: 1.5px solid var(--gris);
-  transition: background 0.3s, border-color 0.3s, transform 0.3s;
-}
-.progreso li.actual { transform: scale(1.25); border-color: var(--tinta); }
-.progreso li.bien { background: var(--verde); border-color: var(--verde); }
-.progreso li.mal { background: var(--rojo); border-color: var(--rojo); }
-
-/* ---------- Ronda ---------- */
-
-.reto { text-align: center; padding-top: 1.25rem; }
+.reto { text-align: center; padding-top: 1.1rem; }
 
 .ronda-numero {
   margin: 0;
   font-size: 0.9rem; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--gris);
 }
-.del-reves { color: var(--rojo); }
 
-.toponimo-grande {
-  margin: 1.4rem 0 0.4rem;
-  font: 400 clamp(2.6rem, 12vw, 3.6rem)/1.05 var(--titular);
-  overflow-wrap: anywhere;
+.lugares {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem;
+  margin: 0.9rem 0 0;
   animation: aparecer 0.45s ease-out;
 }
 
-.pregunta { margin: 0 0 1.6rem; font-style: italic; color: var(--gris); font-size: 1.2rem; }
-
-.pregunta-inversa {
-  margin: 1.4rem 0 1.6rem;
-  font: 400 clamp(1.8rem, 8vw, 2.3rem)/1.2 var(--titular);
-  animation: aparecer 0.45s ease-out;
-}
-
-.opciones { display: grid; gap: 0.7rem; }
-
-.opcion {
-  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
-  width: 100%; min-height: 3.6rem;
-  padding: 0.75rem 1.1rem;
+.lugar {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem;
+  min-height: 6.2rem;
+  padding: 0.7rem 0.4rem;
   border: 1.5px solid var(--linea);
   border-radius: var(--radio);
   background: var(--superficie);
   box-shadow: var(--sombra);
-  font-size: 1.2rem; line-height: 1.25; text-align: left;
+  text-align: center;
   cursor: pointer;
-  transition: transform 0.12s, border-color 0.25s, background 0.25s, opacity 0.25s;
+  transition: transform 0.12s, border-color 0.25s, background 0.25s, box-shadow 0.25s;
 }
-.opcion.toponimo { font-family: var(--titular); font-size: 1.45rem; justify-content: center; text-align: center; }
+.lugar-nombre {
+  max-width: 100%;
+  font: 400 clamp(1.1rem, 5.2vw, 1.4rem)/1.08 var(--titular);
+}
+.lugar-nombre.partir { hyphens: auto; overflow-wrap: anywhere; }
+.lugar-region { font-size: 0.78rem; line-height: 1.15; color: var(--gris); }
+.lugar-significado { margin-top: 0.15rem; font-size: 0.9rem; line-height: 1.15; font-style: italic; }
+.lugar .senal { position: absolute; top: 0.2rem; right: 0.45rem; font-size: 1rem; }
+
+.lugar:not(:disabled):hover { border-color: var(--gris); }
+.lugar:not(:disabled):active { transform: scale(0.97); }
+.lugar:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; }
+.lugar:disabled { cursor: default; box-shadow: none; }
+.lugar.bien { border-color: var(--verde); background: var(--verde-claro); }
+.lugar.mal { border-color: var(--rojo); background: var(--rojo-claro); }
+.lugar.bien .senal { color: var(--verde); }
+.lugar.mal .senal { color: var(--rojo); }
+.lugar.recien.bien { animation: latido 0.45s ease-out; }
+.lugar.recien.mal { animation: temblor 0.4s ease-out; }
+
+/* Lo tocado y aún sin emparejar: borde de tinta y un leve realce. */
+.lugar.elegido, .opcion.elegido {
+  border-color: var(--tinta);
+  box-shadow: 0 0 0 1.5px var(--tinta), var(--sombra);
+}
+.lugar.elegido { transform: translateY(-2px); }
+
+.pista { min-height: 1.45em; margin: 0.9rem 0 0.8rem; font-style: italic; color: var(--gris); font-size: 1.1rem; }
+.pista strong { font-weight: 500; font-style: normal; color: var(--tinta); }
+
+.opciones { display: grid; gap: 0.6rem; }
+
+.opcion {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  width: 100%; min-height: 3.1rem;
+  padding: 0.6rem 1.1rem;
+  border: 1.5px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--superficie);
+  box-shadow: var(--sombra);
+  font-size: 1.15rem; line-height: 1.25; text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s, border-color 0.25s, background 0.25s, opacity 0.25s, box-shadow 0.25s;
+}
 .opcion:not(:disabled):hover { border-color: var(--gris); }
 .opcion:not(:disabled):active { transform: scale(0.98); }
 .opcion:focus-visible { outline: 2px solid var(--tinta); outline-offset: 2px; }
 .opcion:disabled { cursor: default; }
 
-.opcion.correcta { border-color: var(--verde); background: var(--verde-claro); animation: latido 0.45s ease-out; }
-.opcion.fallada { border-color: var(--rojo); background: var(--rojo-claro); color: var(--rojo-oscuro); animation: temblor 0.4s ease-out; }
-.opcion.apagada { opacity: 0.45; box-shadow: none; }
-.opcion.toponimo.correcta, .opcion.toponimo.fallada { justify-content: space-between; }
+/* Significado ya emparejado: apagado, con el lugar al que pertenece. */
+.opcion.asignado { opacity: 0.55; box-shadow: none; }
+.opcion.asignado.bien { border-color: var(--verde); }
+.opcion.asignado.mal { border-color: var(--rojo); }
+.opcion.asignado.recien { animation: latido 0.45s ease-out; }
+.dueno { flex: none; font: 400 1rem/1 var(--titular); color: var(--gris); }
+.asignado.bien .dueno { color: var(--verde); }
+.asignado.mal .dueno { color: var(--rojo); }
+/* El significado elegido por error tiembla, pero sigue libre para su lugar. */
+.opcion.fallo { animation: temblor 0.4s ease-out; border-color: var(--rojo); }
 
-.senal { font-size: 1.3rem; font-weight: 600; }
-.correcta .senal { color: var(--verde); }
-.fallada .senal { color: var(--rojo); }
+.senal { font-weight: 600; }
 
 /* ---------- Ficha de revelación ---------- */
 

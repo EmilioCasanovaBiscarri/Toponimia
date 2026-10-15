@@ -1,5 +1,6 @@
 /* Toponimia · app.js
-   Tres lugares al día, los mismos para todos. Sin servidor: el día sale de la fecha local
+   Tres lugares al día, los mismos para todos: se empareja cada uno con su significado entre seis
+   (los tres buenos y un señuelo de cada lugar). Sin servidor: el día sale de la fecha local
    (FECHA_INICIO, en config.js) y la partida se guarda en localStorage. */
 'use strict';
 
@@ -54,6 +55,7 @@ const CHINCHETA =
   '<circle cx="12" cy="12" r="3.6" fill="#FBF6EC"/></svg>';
 
 const app = document.getElementById('app');
+const anuncio = document.getElementById('anuncio');
 const aviso = document.getElementById('aviso');
 const panel = document.getElementById('estadisticas');
 const reglas = document.getElementById('reglas');
@@ -69,9 +71,13 @@ let respuestasPrueba = [];
 
 let guardado = cargar();
 let diaMostrado = 0;
-/** Ronda en pantalla (0, 1, 2) o RONDAS para el resultado. */
-let vista = 0;
-/** La ficha solo se anima justo al responder, no al volver a pintarla. */
+/** 'tablero' mientras queda algún lugar por emparejar; 'resultado' al final. */
+let vista = 'tablero';
+/** Lugar cuya ficha se ve bajo el tablero (índice de la ronda) o null. */
+let fichaAbierta = null;
+/** Lo tocado y aún sin emparejar: un lugar (índice) y un significado (texto). */
+let seleccion = { lugar: null, significado: null };
+/** La ficha y la pareja solo se animan justo al emparejar, no al volver a pintarlas. */
 let animarFicha = false;
 
 /* ---------- Almacenamiento ---------- */
@@ -149,23 +155,49 @@ function aleatorio(semilla) {
   };
 }
 
-function opcionesDe(numero, indice, r) {
-  const rnd = aleatorio(numero * 7919 + indice * 104729);
-  const opciones = [...r.opciones];
-  for (let i = opciones.length - 1; i > 0; i--) {
+function barajar(lista, rnd) {
+  const copia = [...lista];
+  for (let i = copia.length - 1; i > 0; i--) {
     const j = Math.floor(rnd() * (i + 1));
-    [opciones[i], opciones[j]] = [opciones[j], opciones[i]];
+    [copia[i], copia[j]] = [copia[j], copia[i]];
   }
-  return opciones;
+  return copia;
 }
 
+/** El nombre que se empareja: el lugar o, en las rondas inversas, el topónimo correcto. */
+const nombreDe = (r) => (esInversa(r) ? r.correcta : r.lugar);
+
+/**
+ * Los significados del tablero, barajados igual para todos: el de cada lugar y un señuelo de cada
+ * uno, elegido entre sus opciones falsas. Las rondas inversas no tienen significados falsos (sus
+ * opciones son lugares): esos días salen cinco.
+ */
+function significadosDe(numero, rondas) {
+  const lista = [];
+  rondas.forEach((r, i) => {
+    lista.push(significado(r));
+    if (esInversa(r)) return;
+    const senuelos = r.opciones.filter((o) => o !== r.correcta);
+    if (senuelos.length) lista.push(senuelos[Math.floor(aleatorio(numero * 7919 + i * 104729)() * senuelos.length)]);
+  });
+  return barajar([...new Set(lista)], aleatorio(numero * 7919));
+}
+
+/** Respuestas del día, una por lugar y en su posición (null si aún no se ha emparejado). */
 function respuestasDe(numero) {
-  if (diaPrueba) return respuestasPrueba;
-  return guardado.partida && guardado.partida.dia === numero ? guardado.partida.respuestas : [];
+  const lista = diaPrueba ? respuestasPrueba
+    : guardado.partida && guardado.partida.dia === numero ? guardado.partida.respuestas : [];
+  return Array.from({ length: RONDAS }, (_, i) => lista[i] ?? null);
 }
 
+const contestadas = (respuestas) => respuestas.filter((r) => r !== null).length;
+
+/** Antes se elegía el topónimo en las rondas inversas: una partida guardada así también vale. */
+const acierto = (r, respuesta) => respuesta === significado(r) || (esInversa(r) && respuesta === r.correcta);
+
+/** true, false o null (sin emparejar) por lugar. */
 function aciertosDe(rondas, respuestas) {
-  return respuestas.map((resp, i) => resp === rondas[i].correcta);
+  return respuestas.map((resp, i) => (resp === null ? null : acierto(rondas[i], resp)));
 }
 
 /* ---------- Estadísticas ---------- */
@@ -232,36 +264,43 @@ function render() {
 
   if (numero < 1) return pintarFuera(antesDeEmpezar());
 
+  const respuestas = respuestasDe(numero);
+  const completa = contestadas(respuestas) === RONDAS;
   if (numero !== diaMostrado) {
     diaMostrado = numero;
-    vista = Math.min(respuestasDe(numero).length, RONDAS);
+    vista = completa ? 'resultado' : 'tablero';
+    fichaAbierta = null;
+    seleccion = { lugar: null, significado: null };
   }
-  const respuestas = respuestasDe(numero);
-  if (respuestas.length === RONDAS && !diaPrueba) avisarAlmanaque(numero, rondas, respuestas);
+  if (completa && !diaPrueba) avisarAlmanaque(numero, rondas, respuestas);
 
   app.innerHTML = `
     ${diaPrueba ? avisoPrueba(numero) : ''}
-    ${vista < RONDAS ? progreso(rondas, respuestas) : ''}
-    ${vista < RONDAS ? ronda(numero, vista, rondas[vista], respuestas[vista]) : resultado(numero, rondas, respuestas)}
+    ${vista === 'tablero' ? tablero(numero, rondas, respuestas) : resultado(numero, rondas, respuestas)}
   `;
+
+  if (vista === 'tablero') {
+    prepararTablero(numero, rondas);
+    ajustarNombres();
+  }
   animarFicha = false;
 
-  app.querySelectorAll('.opcion').forEach((b) =>
-    b.addEventListener('click', () => responder(numero, vista, b.dataset.valor)),
-  );
   const seguir = app.querySelector('#seguir');
   if (seguir) {
     seguir.addEventListener('click', () => {
-      vista++;
+      fichaAbierta = null;
+      if (completa) vista = 'resultado';
       render();
       scrollTo({ top: 0, behavior: 'smooth' });
+      // Con teclado, el foco vuelve al primer lugar por emparejar.
+      app.querySelector('.lugar:not(:disabled)')?.focus({ preventScroll: true });
     });
   }
   const compartirBoton = app.querySelector('#compartir');
   if (compartirBoton) compartirBoton.addEventListener('click', () => compartir(numero, aciertosDe(rondas, respuestas)));
 
   const contenedor = app.querySelector('.mapa');
-  if (contenedor) montarMapa(contenedor, rondas[vista]);
+  if (contenedor) montarMapa(contenedor, rondas[fichaAbierta]);
 }
 
 function pintarFuera(html) {
@@ -289,52 +328,116 @@ function avisoPrueba(numero) {
     </p>`;
 }
 
-function progreso(rondas, respuestas) {
+function tablero(numero, rondas, respuestas) {
   const aciertos = aciertosDe(rondas, respuestas);
-  const pasos = rondas.map((_, i) => {
-    const estado = i < aciertos.length ? (aciertos[i] ? 'bien' : 'mal') : '';
-    const texto = i < aciertos.length ? (aciertos[i] ? ', acertada' : ', fallada') : '';
-    return `<li class="${estado} ${i === vista ? 'actual' : ''}" ${i === vista ? 'aria-current="step"' : ''}><span class="visualmente-oculto">Ronda ${i + 1}${texto}</span></li>`;
+  // De cada significado ya emparejado, el lugar al que pertenece y si se acertó.
+  const asignados = new Map();
+  rondas.forEach((r, i) => { if (aciertos[i] !== null) asignados.set(significado(r), { i, bien: aciertos[i] }); });
+  const recien = animarFicha ? fichaAbierta : null;
+
+  const lugares = rondas.map((r, i) => {
+    const hecho = aciertos[i] !== null;
+    const estado = hecho ? (aciertos[i] ? 'bien' : 'mal') : '';
+    const etiqueta = hecho
+      ? `${nombreDe(r)}: ${aciertos[i] ? 'acertado' : 'fallado'}, ${significado(r)}`
+      : `${nombreDe(r)}, ${r.region}`;
+    return `<button class="lugar ${estado} ${i === recien ? 'recien' : ''}" type="button" data-indice="${i}"
+        aria-pressed="false" aria-label="${esc(etiqueta)}" ${hecho ? 'disabled' : ''}>
+        <span class="lugar-nombre" lang="es">${esc(nombreDe(r))}</span>
+        <span class="lugar-region">${esc(r.region)}</span>
+        ${hecho ? `<span class="lugar-significado">${esc(significado(r))}</span><span class="senal" aria-hidden="true">${aciertos[i] ? '✓' : '✗'}</span>` : ''}
+      </button>`;
   }).join('');
-  return `<ol class="progreso" aria-label="Rondas del día">${pasos}</ol>`;
-}
 
-function ronda(numero, indice, r, respuesta) {
-  const jugada = respuesta !== undefined;
-  const inversa = esInversa(r);
-  const opciones = opcionesDe(numero, indice, r)
-    .map((op) => {
-      let estado = '';
-      let senal = '';
-      if (jugada) {
-        if (op === r.correcta) {
-          estado = 'correcta';
-          senal = '<span class="senal" aria-label="Correcta">✓</span>';
-        } else if (op === respuesta) {
-          estado = 'fallada';
-          senal = '<span class="senal" aria-label="Tu respuesta">✗</span>';
-        } else {
-          estado = 'apagada';
-        }
-      }
-      return `<button class="opcion ${inversa ? 'toponimo' : ''} ${estado}" type="button" data-valor="${esc(op)}" ${jugada ? 'disabled' : ''}>
-          <span>${esc(op)}</span>${senal}
-        </button>`;
-    })
-    .join('');
-
-  const enunciado = inversa
-    ? `<p class="pregunta-inversa">${esc(r.pregunta)}</p>`
-    : `<h2 class="toponimo-grande">${esc(r.lugar)}</h2><p class="pregunta">¿Qué significa su nombre?</p>`;
+  const significados = significadosDe(numero, rondas).map((texto) => {
+    const a = asignados.get(texto);
+    const fallo = recien !== null && aciertos[recien] === false && texto === respuestas[recien];
+    const clases = a ? `asignado ${a.bien ? 'bien' : 'mal'} ${a.i === recien ? 'recien' : ''}` : fallo ? 'fallo' : '';
+    const dueno = a ? `<span class="dueno" aria-hidden="true">${esc(nombreDe(rondas[a.i]))}</span>` : '';
+    const etiqueta = a ? ` aria-label="${esc(`${texto}: ${nombreDe(rondas[a.i])}`)}"` : '';
+    return `<button class="opcion significado-opcion ${clases}" type="button" data-valor="${esc(texto)}"
+        aria-pressed="false"${etiqueta} ${a ? 'disabled' : ''}><span>${esc(texto)}</span>${dueno}</button>`;
+  }).join('');
 
   return `
-    <section class="reto">
-      <p class="ronda-numero">Nº ${numero} · Ronda ${indice + 1} de ${RONDAS}${inversa ? ' · <span class="del-reves">del revés</span>' : ''}</p>
-      ${enunciado}
-      <div class="opciones">${opciones}</div>
+    <section class="reto tablero">
+      <p class="ronda-numero">Nº ${numero} · ${contestadas(respuestas)} de ${RONDAS}</p>
+      <div class="lugares" role="group" aria-label="Lugares">${lugares}</div>
+      <p class="pista" id="pista">${pistaTablero(rondas)}</p>
+      <div class="opciones" role="group" aria-label="Significados">${significados}</div>
     </section>
-    ${jugada ? ficha(r, respuesta === r.correcta, indice === RONDAS - 1) : ''}
+    ${fichaAbierta !== null ? ficha(rondas[fichaAbierta], aciertos[fichaAbierta], respuestas[fichaAbierta], contestadas(respuestas) === RONDAS) : ''}
   `;
+}
+
+/** La línea entre lugares y significados dice qué falta por tocar. */
+function pistaTablero(rondas) {
+  if (seleccion.lugar !== null && rondas) return `¿Qué significa <strong>${esc(nombreDe(rondas[seleccion.lugar]))}</strong>?`;
+  if (seleccion.significado !== null) return `¿Qué lugar significa <strong>«${esc(seleccion.significado)}»</strong>?`;
+  return 'Toca un lugar y después su significado, o al revés.';
+}
+
+/** Tocar marca o desmarca sin volver a pintar; con lugar y significado elegidos, se empareja. */
+function prepararTablero(numero, rondas) {
+  const pintarSeleccion = () => {
+    app.querySelectorAll('.lugar').forEach((b) => {
+      const activo = Number(b.dataset.indice) === seleccion.lugar;
+      b.classList.toggle('elegido', activo);
+      b.setAttribute('aria-pressed', String(activo));
+    });
+    app.querySelectorAll('.significado-opcion').forEach((b) => {
+      const activo = b.dataset.valor === seleccion.significado;
+      b.classList.toggle('elegido', activo);
+      b.setAttribute('aria-pressed', String(activo));
+    });
+    app.querySelector('#pista').innerHTML = pistaTablero(rondas);
+  };
+  const intentar = () => {
+    if (seleccion.lugar === null || seleccion.significado === null) {
+      pintarSeleccion();
+      if (seleccion.lugar !== null) anunciar(`${nombreDe(rondas[seleccion.lugar])}: elige su significado.`);
+      else if (seleccion.significado !== null) anunciar(`«${seleccion.significado}»: elige el lugar.`);
+      return;
+    }
+    const { lugar, significado: valor } = seleccion;
+    seleccion = { lugar: null, significado: null };
+    responder(numero, lugar, valor);
+  };
+  app.querySelectorAll('.lugar').forEach((b) => b.addEventListener('click', () => {
+    const i = Number(b.dataset.indice);
+    seleccion.lugar = seleccion.lugar === i ? null : i;
+    intentar();
+  }));
+  app.querySelectorAll('.significado-opcion').forEach((b) => b.addEventListener('click', () => {
+    seleccion.significado = seleccion.significado === b.dataset.valor ? null : b.dataset.valor;
+    intentar();
+  }));
+  // Lo tocado antes de volver a pintar (por ejemplo, al cerrar una ficha) sigue marcado.
+  if (seleccion.lugar !== null || seleccion.significado !== null) pintarSeleccion();
+}
+
+/**
+ * Si una palabra no cabe en su tarjeta (Chapultepec), se achica la letra hasta 15 px; si ni así
+ * cabe (Chichicastenango en un móvil estrecho), se parte con guion.
+ */
+function ajustarNombres() {
+  app.querySelectorAll('.lugar-nombre').forEach((n) => {
+    n.style.fontSize = '';
+    n.classList.remove('partir');
+    let tamano = parseFloat(getComputedStyle(n).fontSize);
+    while (n.scrollWidth > n.clientWidth + 1 && tamano > 15) {
+      tamano -= 0.5;
+      n.style.fontSize = `${tamano}px`;
+    }
+    if (n.scrollWidth > n.clientWidth + 1) n.classList.add('partir');
+  });
+}
+addEventListener('resize', () => { if (vista === 'tablero') ajustarNombres(); });
+
+function anunciar(texto) {
+  anuncio.textContent = '';
+  // En otro fotograma, para que el lector de pantalla lo lea aunque se repita el texto.
+  requestAnimationFrame(() => { anuncio.textContent = texto; });
 }
 
 function etiquetaLengua(lengua) {
@@ -343,14 +446,13 @@ function etiquetaLengua(lengua) {
   return `<span class="lengua" style="--color-lengua:${color}">${esc(lengua)}</span>`;
 }
 
-function ficha(r, acierto, ultima) {
-  const inversa = esInversa(r);
-  const titulo = inversa ? r.correcta : r.lugar;
+function ficha(r, acertada, respuesta, ultima) {
+  const titulo = nombreDe(r);
   const donde = r.lugar !== titulo ? `${r.lugar} · ${r.region}` : r.region;
   return `
-    <section class="ficha ${animarFicha ? 'entra' : ''}">
-      <p class="veredicto ${acierto ? 'bien' : 'mal'}">
-        ${acierto ? '<span aria-hidden="true">✓</span> ¡Correcto!' : `<span aria-hidden="true">✗</span> Era «${esc(r.correcta)}»`}
+    <section class="ficha ${animarFicha ? 'entra' : ''}" tabindex="-1" aria-label="Ficha de ${esc(titulo)}">
+      <p class="veredicto ${acertada ? 'bien' : 'mal'}">
+        ${acertada ? '<span aria-hidden="true">✓</span> ¡Correcto!' : `<span aria-hidden="true">✗</span> No era «${esc(respuesta)}»`}
       </p>
       <h3 class="ficha-lugar">${esc(titulo)}</h3>
       <p class="ficha-region">${esc(donde)}</p>
@@ -359,7 +461,7 @@ function ficha(r, acierto, ultima) {
       <p class="nota">${enriquecer(r.nota)}</p>
       ${window.L ? `<div class="mapa" role="img" aria-label="Mapa: ${esc(r.lugar)}, ${esc(r.region)}"></div>` : ''}
     </section>
-    <button id="seguir" class="boton" type="button">${ultima ? 'Ver resultado' : 'Siguiente'}</button>
+    <button id="seguir" class="boton" type="button">${ultima ? 'Ver resultado' : 'Seguir'}</button>
   `;
 }
 
@@ -428,7 +530,7 @@ function resultado(numero, rondas, respuestas) {
       (r, i) => `
         <li>
           <span class="marca ${aciertos[i] ? 'bien' : 'mal'}" aria-label="${aciertos[i] ? 'Acierto' : 'Fallo'}">${aciertos[i] ? '✓' : '✗'}</span>
-          <span class="lista-lugar">${esc(esInversa(r) ? r.correcta : r.lugar)}</span>
+          <span class="lista-lugar">${esc(nombreDe(r))}</span>
           <span class="lista-significado">${esc(significado(r))}</span>
         </li>`,
     )
@@ -521,13 +623,13 @@ function reglasPrimeraVez() {
 
 function responder(numero, indice, valor) {
   const respuestas = respuestasDe(numero);
-  if (respuestas.length !== indice) return;
-  const nuevas = [...respuestas, valor];
+  if (respuestas[indice] !== null) return;
+  const nuevas = respuestas.map((r, i) => (i === indice ? valor : r));
   if (diaPrueba) {
     respuestasPrueba = nuevas;
   } else {
     let { estadisticas, resultados = {} } = guardado;
-    if (nuevas.length === RONDAS) {
+    if (contestadas(nuevas) === RONDAS) {
       const aciertos = aciertosDe(rondasDe(numero), nuevas);
       estadisticas = registrarDia(estadisticas, numero, aciertos);
       resultados = { ...resultados, [numero]: aciertos };
@@ -535,10 +637,18 @@ function responder(numero, indice, valor) {
     guardado = { ...guardado, estadisticas, resultados, partida: { dia: numero, respuestas: nuevas } };
     guardar();
   }
+  const r = rondasDe(numero)[indice];
+  anunciar(acierto(r, valor)
+    ? `${nombreDe(r)}, «${valor}»: ¡correcto!`
+    : `${nombreDe(r)}: no era «${valor}», era «${significado(r)}».`);
+  fichaAbierta = indice;
   animarFicha = true;
   render();
   const revelada = app.querySelector('.ficha');
-  if (revelada) setTimeout(() => revelada.scrollIntoView({ behavior: 'smooth', block: 'start' }), 250);
+  if (revelada) {
+    revelada.focus({ preventScroll: true });
+    setTimeout(() => revelada.scrollIntoView({ behavior: 'smooth', block: 'start' }), 450);
+  }
 }
 
 // Una marca por lugar: ▰ acertado, ▱ fallado. «Toponimia nº 7 ▰▱▰ 2/3 aciertos» y el enlace.
@@ -596,6 +706,8 @@ async function iniciar() {
   }
 
   render();
+  // Con la tipografía ya cargada, los nombres largos se miden de nuevo.
+  document.fonts?.ready.then(() => { if (vista === 'tablero') ajustarNombres(); });
   retirarPortada(reglasPrimeraVez);
 
   // Cada segundo: la cuenta atrás y, a medianoche, el día nuevo.
